@@ -8,7 +8,13 @@ const router = Router();
 const GOOGLE_AI_API_KEY = process.env.GOOGLE_AI_API_KEY;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
-const GEMINI_MODELS = ["gemini-3.8-flash", "gemini-1.5-flash"];
+// Verified available models (newest → oldest for stability fallback)
+const GEMINI_MODELS = [
+  "gemini-3.8-flash",
+  "gemini-3.7-flash",
+  "gemini-3.6-flash",
+  "gemini-3.5-flash",
+];
 
 async function callGemini(body: object, retries = 3): Promise<any> {
   for (const model of GEMINI_MODELS) {
