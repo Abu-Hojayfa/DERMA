@@ -201,7 +201,7 @@ router.post("/spots/:id/scan", async (req: AuthRequest, res: Response) => {
       // 2. Call Groq for Care Card
       const groqUrl = "https://api.groq.com/openai/v1/chat/completions";
       const groqBody = {
-        model: "llama-3.3-70b-versatile",
+        model: "qwen/qwen3.8-27b",
         messages: [
           { role: "system", content: "You are a friendly cosmetic skincare assistant. You receive an analysis of a skin spot. Output a JSON object with: { \"generatedText\": string (friendly explanation), \"routineSteps\": string[] (suggested skincare steps), \"ingredients\": string[] (helpful cosmetic ingredients), \"urgencyLevel\": \"low\"|\"medium\"|\"high\" }." },
           { role: "user", content: JSON.stringify(analysis) }
