@@ -62,7 +62,7 @@ export default function SignupScreen() {
           <Text style={styles.label}>Full name</Text>
           <View style={[styles.inputShell, focusedField === 'name' && styles.inputFocused, errors.name && styles.inputError]}>
             <Feather name="user" size={18} color={focusedField === 'name' ? colors.primary : colors.mutedForeground} />
-            <TextInput value={name} onChangeText={setName} onFocus={() => setFocusedField('name')} onBlur={() => setFocusedField(null)} placeholder="Alex Morgan" placeholderTextColor={colors.mutedForeground} style={styles.input} />
+            <TextInput value={name} onChangeText={setName} onFocus={() => setFocusedField('name')} onBlur={() => setFocusedField(null)} placeholder="Alex Morgan" placeholderTextColor={colors.mutedForeground} style={styles.input} autoComplete="off" importantForAutofill="no" />
           </View>
           {errors.name ? <Text style={styles.error}>{errors.name}</Text> : null}
         </View>
@@ -70,7 +70,7 @@ export default function SignupScreen() {
           <Text style={styles.label}>Email address</Text>
           <View style={[styles.inputShell, focusedField === 'email' && styles.inputFocused, errors.email && styles.inputError]}>
             <Feather name="mail" size={18} color={focusedField === 'email' ? colors.primary : colors.mutedForeground} />
-            <TextInput value={email} onChangeText={setEmail} onFocus={() => setFocusedField('email')} onBlur={() => setFocusedField(null)} autoCapitalize="none" keyboardType="email-address" placeholder="you@example.com" placeholderTextColor={colors.mutedForeground} style={styles.input} />
+            <TextInput value={email} onChangeText={setEmail} onFocus={() => setFocusedField('email')} onBlur={() => setFocusedField(null)} autoCapitalize="none" keyboardType="email-address" placeholder="you@example.com" placeholderTextColor={colors.mutedForeground} style={styles.input} autoComplete="off" importantForAutofill="no" />
           </View>
           {errors.email ? <Text style={styles.error}>{errors.email}</Text> : null}
         </View>
@@ -78,7 +78,7 @@ export default function SignupScreen() {
           <Text style={styles.label}>Password</Text>
           <View style={[styles.inputShell, focusedField === 'password' && styles.inputFocused, errors.password && styles.inputError]}>
             <Feather name="lock" size={18} color={focusedField === 'password' ? colors.primary : colors.mutedForeground} />
-            <TextInput value={password} onChangeText={setPassword} onFocus={() => setFocusedField('password')} onBlur={() => setFocusedField(null)} secureTextEntry placeholder="At least 4 characters" placeholderTextColor={colors.mutedForeground} style={styles.input} />
+            <TextInput value={password} onChangeText={setPassword} onFocus={() => setFocusedField('password')} onBlur={() => setFocusedField(null)} secureTextEntry placeholder="At least 4 characters" placeholderTextColor={colors.mutedForeground} style={styles.input} autoComplete="off" importantForAutofill="no" />
           </View>
           {errors.password ? <Text style={styles.error}>{errors.password}</Text> : null}
         </View>
@@ -86,7 +86,7 @@ export default function SignupScreen() {
           <Text style={styles.label}>Confirm password</Text>
           <View style={[styles.inputShell, focusedField === 'confirm' && styles.inputFocused, errors.confirm && styles.inputError]}>
             <Feather name="shield" size={18} color={focusedField === 'confirm' ? colors.primary : colors.mutedForeground} />
-            <TextInput value={confirm} onChangeText={setConfirm} onFocus={() => setFocusedField('confirm')} onBlur={() => setFocusedField(null)} secureTextEntry placeholder="Repeat your password" placeholderTextColor={colors.mutedForeground} style={styles.input} />
+            <TextInput value={confirm} onChangeText={setConfirm} onFocus={() => setFocusedField('confirm')} onBlur={() => setFocusedField(null)} secureTextEntry placeholder="Repeat your password" placeholderTextColor={colors.mutedForeground} style={styles.input} autoComplete="off" importantForAutofill="no" />
           </View>
           {errors.confirm ? <Text style={styles.error}>{errors.confirm}</Text> : null}
         </View>
