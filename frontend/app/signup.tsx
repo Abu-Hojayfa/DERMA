@@ -8,10 +8,10 @@ import {
   TextInput,
   TextInputProps,
   View,
+  ScrollView,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
@@ -19,30 +19,14 @@ import { useColors } from "@/hooks/useColors";
 interface FormFieldProps extends TextInputProps {
   label: string;
   icon: keyof typeof Feather.glyphMap;
-  fieldKey: string;
   error?: string;
-  focusedField: string | null;
-  setFocusedField: React.Dispatch<React.SetStateAction<string | null>>;
   colors: any;
   styles: any;
 }
 
 const FormField = React.forwardRef<TextInput, FormFieldProps>(
-  (
-    {
-      label,
-      icon,
-      fieldKey,
-      error,
-      focusedField,
-      setFocusedField,
-      colors,
-      styles,
-      ...props
-    },
-    ref,
-  ) => {
-    const isFocused = focusedField === fieldKey;
+  ({ label, icon, error, colors, styles, ...props }, ref) => {
+    const [isFocused, setIsFocused] = useState(false);
     return (
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>{label}</Text>
@@ -60,8 +44,8 @@ const FormField = React.forwardRef<TextInput, FormFieldProps>(
           />
           <TextInput
             ref={ref}
-            onFocus={() => setFocusedField(fieldKey)}
-            onBlur={() => setFocusedField((c) => (c === fieldKey ? null : c))}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             placeholderTextColor={colors.mutedForeground}
             style={styles.input}
             {...props}
@@ -80,12 +64,11 @@ export default function SignupScreen() {
   const { signUp } = useAuth();
 
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
+  const [email, setEmail] = useState("demo2@email.com");
+  const [password, setPassword] = useState("1234");
+  const [confirm, setConfirm] = useState("1234");
   const [agreed, setAgreed] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [focusedField, setFocusedField] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
 
   const emailRef = useRef<TextInput>(null);
@@ -96,7 +79,7 @@ export default function SignupScreen() {
   const isValid =
     !!name.trim() &&
     emailValid &&
-    password.length >= 8 &&
+    password.length >= 4 &&
     confirm === password &&
     agreed;
 
@@ -109,7 +92,7 @@ export default function SignupScreen() {
           ? "Enter a valid email address"
           : "",
     password:
-      submitted && password.length < 8 ? "Use at least 8 characters" : "",
+      submitted && password.length < 4 ? "Use at least 4 characters" : "",
     confirm: submitted && confirm !== password ? "Passwords do not match" : "",
     agreed:
       submitted && !agreed ? "Please acknowledge this before continuing" : "",
@@ -135,15 +118,15 @@ export default function SignupScreen() {
   }
 
   return (
-    <KeyboardAwareScrollViewCompat
+    <ScrollView
       style={styles.screen}
       contentContainerStyle={[
         styles.content,
         { paddingTop: insets.top + 18, paddingBottom: insets.bottom + 26 },
       ]}
-      bottomOffset={24}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets={true}
     >
       <ScreenHeader
         title="Create account"
@@ -154,12 +137,9 @@ export default function SignupScreen() {
         <FormField
           label="Full name"
           icon="user"
-          fieldKey="name"
           value={name}
           onChangeText={setName}
           error={errors.name}
-          focusedField={focusedField}
-          setFocusedField={setFocusedField}
           colors={colors}
           styles={styles}
           placeholder="Alex Morgan"
@@ -172,12 +152,9 @@ export default function SignupScreen() {
           ref={emailRef}
           label="Email address"
           icon="mail"
-          fieldKey="email"
           value={email}
           onChangeText={setEmail}
           error={errors.email}
-          focusedField={focusedField}
-          setFocusedField={setFocusedField}
           colors={colors}
           styles={styles}
           autoCapitalize="none"
@@ -193,16 +170,13 @@ export default function SignupScreen() {
           ref={passwordRef}
           label="Password"
           icon="lock"
-          fieldKey="password"
           value={password}
           onChangeText={setPassword}
           error={errors.password}
-          focusedField={focusedField}
-          setFocusedField={setFocusedField}
           colors={colors}
           styles={styles}
           secureTextEntry
-          placeholder="At least 8 characters"
+          placeholder="At least 4 characters"
           autoComplete="new-password"
           textContentType="newPassword"
           returnKeyType="next"
@@ -213,12 +187,9 @@ export default function SignupScreen() {
           ref={confirmRef}
           label="Confirm password"
           icon="shield"
-          fieldKey="confirm"
           value={confirm}
           onChangeText={setConfirm}
           error={errors.confirm}
-          focusedField={focusedField}
-          setFocusedField={setFocusedField}
           colors={colors}
           styles={styles}
           secureTextEntry
@@ -282,7 +253,7 @@ export default function SignupScreen() {
           <Text style={styles.link}>Log in</Text>
         </Pressable>
       </View>
-    </KeyboardAwareScrollViewCompat>
+    </ScrollView>
   );
 }
 
