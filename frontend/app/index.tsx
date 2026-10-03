@@ -25,38 +25,40 @@ interface FormFieldProps extends TextInputProps {
   rightElement?: React.ReactNode;
 }
 
-const FormField = React.forwardRef<TextInput, FormFieldProps>(
-  ({ label, icon, error, colors, styles, rightElement, ...props }, ref) => {
-    const [isFocused, setIsFocused] = useState(false);
-    return (
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>{label}</Text>
-        <View
-          style={[
-            styles.inputShell,
-            isFocused && styles.inputFocused,
-            error && styles.inputError,
-          ]}
-        >
-          <Feather
-            name={icon}
-            size={18}
-            color={isFocused ? colors.primary : colors.mutedForeground}
-          />
-          <TextInput
-            ref={ref}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            placeholderTextColor={colors.mutedForeground}
-            style={styles.input}
-            {...props}
-          />
-          {rightElement}
+const FormField = React.memo(
+  React.forwardRef<TextInput, FormFieldProps>(
+    ({ label, icon, error, colors, styles, rightElement, ...props }, ref) => {
+      const [isFocused, setIsFocused] = useState(false);
+      return (
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>{label}</Text>
+          <View
+            style={[
+              styles.inputShell,
+              isFocused && styles.inputFocused,
+              error && styles.inputError,
+            ]}
+          >
+            <Feather
+              name={icon}
+              size={18}
+              color={isFocused ? colors.primary : colors.mutedForeground}
+            />
+            <TextInput
+              ref={ref}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              placeholderTextColor={colors.mutedForeground}
+              style={styles.input}
+              {...props}
+            />
+            {rightElement}
+          </View>
+          {error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-      </View>
-    );
-  },
+      );
+    },
+  ),
 );
 
 function validEmail(value: string) {
