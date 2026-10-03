@@ -4,6 +4,8 @@ import { useColors } from '@/hooks/useColors';
 
 export default function NotFoundScreen() {
   const colors = useColors();
+  const styles = getStyles(colors);
+  const colors = useColors();
 
   return (
     <>
@@ -23,7 +25,7 @@ export default function NotFoundScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
