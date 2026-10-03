@@ -66,13 +66,19 @@ export default function ScanScreen() {
     if (!imageBase64) return;
     setIsScanning(true);
     try {
-      const spot = await createSpotMutation.mutateAsync({ data: { label: "New Scan", bodyRegion: "Unknown" } });
-      await scanSpotMutation.mutateAsync({ id: spot.id, data: { base64Image: imageBase64 } });
-      Alert.alert("Analysis Complete", "Check your history for the results!");
+      const spot = await createSpotMutation.mutateAsync({ data: { label: 'New Scan', bodyRegion: 'Unknown' } });
+      const scanResult = await scanSpotMutation.mutateAsync({ id: spot.id, data: { base64Image: imageBase64 } });
+      router.replace({
+        pathname: '/result',
+        params: {
+          imageUri: imageUri ?? '',
+          result: JSON.stringify(scanResult),
+        },
+      });
       setImageUri(null);
       setImageBase64(null);
     } catch (e) {
-      Alert.alert("Error", "Failed to analyze image. Please try again.");
+      Alert.alert('Error', 'Failed to analyze image. Please try again.');
     } finally {
       setIsScanning(false);
     }

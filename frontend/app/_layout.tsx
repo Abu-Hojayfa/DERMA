@@ -28,6 +28,7 @@ function RootLayoutNav() {
       <Stack.Screen name="signup" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="assistant" options={{ headerShown: false }} />
+      <Stack.Screen name="result" options={{ headerShown: false }} />
     </Stack>
   );
 }

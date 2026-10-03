@@ -7,6 +7,10 @@ import { requireAuth, type AuthRequest } from "../middleware/auth";
 const router = Router();
 const GOOGLE_AI_API_KEY = process.env.GOOGLE_AI_API_KEY;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_API = "https://api.groq.com/openai/v1/chat/completions";
+
+const CARE_CARD_SYSTEM_PROMPT = `You are a friendly cosmetic skincare assistant. Given a JSON skin analysis, output a JSON object with EXACTLY these keys:
+{ "generatedText": string (2-3 friendly sentences explaining the concern and what the user should do), "routineSteps": string[] (3-5 practical skincare steps), "ingredients": string[] (3-5 helpful cosmetic ingredients), "urgencyLevel": "low"|"medium"|"high" }`;
 
 // Verified live-responding models (newest → oldest for stability fallback)
 const GEMINI_MODELS = [
@@ -198,36 +202,77 @@ router.post("/spots/:id/scan", async (req: AuthRequest, res: Response) => {
     }
 
     if (!carePlan) {
-      // 2. Call Groq for Care Card
-      const groqUrl = "https://api.groq.com/openai/v1/chat/completions";
-      const groqBody = {
-        model: "qwen/qwen3.8-27b",
-        messages: [
-          { role: "system", content: "You are a friendly cosmetic skincare assistant. You receive an analysis of a skin spot. Output a JSON object with: { \"generatedText\": string (friendly explanation), \"routineSteps\": string[] (suggested skincare steps), \"ingredients\": string[] (helpful cosmetic ingredients), \"urgencyLevel\": \"low\"|\"medium\"|\"high\" }." },
-          { role: "user", content: JSON.stringify(analysis) }
-        ],
-        response_format: { type: "json_object" }
-      };
+      // 2. Generate care cards in PARALLEL: Groq (Qwen) vs Gemini (text-only)
+      const careCardPrompt = JSON.stringify(analysis);
 
-      const groqRes = await fetch(groqUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${GROQ_API_KEY}`
-        },
-        body: JSON.stringify(groqBody)
-      });
+      const [groqResult, geminiTextResult] = await Promise.allSettled([
+        // Candidate A: Groq Qwen
+        fetch(GROQ_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GROQ_API_KEY}` },
+          body: JSON.stringify({
+            model: "qwen/qwen3.8-27b",
+            messages: [{ role: "system", content: CARE_CARD_SYSTEM_PROMPT }, { role: "user", content: careCardPrompt }],
+            response_format: { type: "json_object" },
+          }),
+        }).then(async r => {
+          if (!r.ok) throw new Error(`Groq ${r.status}`);
+          const d = await r.json() as any;
+          return JSON.parse(d.choices?.[0]?.message?.content || "{}");
+        }),
 
-      if (!groqRes.ok) {
-        const errText = await groqRes.text();
-        logger.error({ status: groqRes.status, errText }, "Groq API failed");
+        // Candidate B: Gemini text-only care card
+        callGemini({
+          contents: [{
+            parts: [{ text: `${CARE_CARD_SYSTEM_PROMPT}\n\nAnalysis: ${careCardPrompt}` }]
+          }],
+          generationConfig: { responseMimeType: "application/json" },
+        }).then(d => {
+          const text = d.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+          return JSON.parse(text);
+        }),
+      ]);
+
+      const candidateA = groqResult.status === "fulfilled" ? groqResult.value : null;
+      const candidateB = geminiTextResult.status === "fulfilled" ? geminiTextResult.value : null;
+      logger.info({ candidateA: !!candidateA, candidateB: !!candidateB }, "Care card candidates generated");
+
+      if (candidateA && candidateB) {
+        // 3. LLM-as-judge: Pick the better care card
+        try {
+          const judgeRes = await fetch(GROQ_API, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GROQ_API_KEY}` },
+            body: JSON.stringify({
+              model: "openai/gpt-oss-120b",
+              messages: [{
+                role: "user",
+                content: [
+                  `You are a skincare expert judge. Two AI assistants generated care cards for a skin concern.`,
+                  `Skin analysis: ${JSON.stringify(analysis)}`,
+                  `Candidate A (Groq Qwen): ${JSON.stringify(candidateA)}`,
+                  `Candidate B (Gemini): ${JSON.stringify(candidateB)}`,
+                  `Which is better for the patient? Reply with ONLY the letter A or B, nothing else.`,
+                ].join("\n"),
+              }],
+            }),
+          });
+          const judgeData = await judgeRes.json() as any;
+          const verdict = (judgeData.choices?.[0]?.message?.content || "A").trim().toUpperCase();
+          carePlan = verdict.startsWith("B") ? candidateB : candidateA;
+          logger.info({ verdict }, "Judge picked care card");
+        } catch (judgeErr) {
+          logger.warn({ judgeErr }, "Judge failed — falling back to candidate A");
+          carePlan = candidateA;
+        }
+      } else {
+        carePlan = candidateA ?? candidateB;
+      }
+
+      if (!carePlan) {
         res.status(502).json({ error: "Care card generation failed" });
         return;
       }
-
-      const groqData = await groqRes.json() as any;
-      const groqContent = groqData.choices?.[0]?.message?.content || "{}";
-      carePlan = JSON.parse(groqContent);
     }
 
     // 3. Save to MongoDB
