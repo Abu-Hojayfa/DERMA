@@ -8,15 +8,14 @@ const router = Router();
 const GOOGLE_AI_API_KEY = process.env.GOOGLE_AI_API_KEY;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
-// Verified available models (newest → oldest for stability fallback)
+// Verified live-responding models (newest → oldest for stability fallback)
 const GEMINI_MODELS = [
   "gemini-3.8-flash",
-  "gemini-3.7-flash",
   "gemini-3.6-flash",
   "gemini-3.5-flash",
 ];
 
-async function callGemini(body: object, retries = 3): Promise<any> {
+async function callGemini(body: object, retries = 5): Promise<any> {
   for (const model of GEMINI_MODELS) {
     for (let attempt = 1; attempt <= retries; attempt++) {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GOOGLE_AI_API_KEY}`;
@@ -25,12 +24,14 @@ async function callGemini(body: object, retries = 3): Promise<any> {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (res.ok) return res.json();
-      const errText = await res.text();
+      if (res.ok) {
+        logger.info({ model, attempt }, "Gemini succeeded");
+        return res.json();
+      }
       const isRetryable = res.status === 503 || res.status === 429;
-      logger.warn({ model, attempt, status: res.status, errText }, "Gemini attempt failed");
+      logger.warn({ model, attempt, status: res.status }, "Gemini attempt failed");
       if (!isRetryable || attempt === retries) break;
-      await new Promise(r => setTimeout(r, attempt * 1500));
+      await new Promise(r => setTimeout(r, 800 * attempt));
     }
   }
   throw new Error("All Gemini models failed");
