@@ -120,8 +120,8 @@ router.post("/spots/:id/scan", async (req: AuthRequest, res: Response) => {
 
     const base64Data = validated.data.base64Image.replace(/^data:image\/\w+;base64,/, "");
 
-    // 1. Call Gemini 2.5 Flash
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_AI_API_KEY}`;
+    // 1. Call Gemini 3.8 Flash
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${GOOGLE_AI_API_KEY}`;
     const geminiBody = {
       contents: [{
         parts: [
