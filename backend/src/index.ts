@@ -1,6 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { connectDB } from "@workspace/db";
+import { connectDB } from "@derma/db";
 
 const rawPort = process.env["PORT"];
 

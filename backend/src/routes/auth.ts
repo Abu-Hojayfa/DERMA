@@ -1,8 +1,8 @@
 import { Router, type Request, type Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { User } from "@workspace/db";
-import { RegisterUserBody, LoginUserBody } from "@workspace/api-zod";
+import { User } from "@derma/db";
+import { RegisterUserBody, LoginUserBody } from "@derma/api-zod";
 import { logger } from "../lib/logger";
 
 const router = Router();

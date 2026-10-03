@@ -1,6 +1,6 @@
 import { Router, type Response } from "express";
-import { Spot, PhotoEntry, CareCard } from "@workspace/db";
-import { CreateSpotBody, ScanSpotBody } from "@workspace/api-zod";
+import { Spot, PhotoEntry, CareCard } from "@derma/db";
+import { CreateSpotBody, ScanSpotBody } from "@derma/api-zod";
 import { logger } from "../lib/logger";
 import { requireAuth, type AuthRequest } from "../middleware/auth";
 
