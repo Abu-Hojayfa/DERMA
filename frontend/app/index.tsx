@@ -67,7 +67,7 @@ export default function LoginScreen() {
   const colors = useColors();
   const styles = useMemo(() => getStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
-  const { user, isLoading, signIn } = useAuth();
+  const { user, isLoading, signIn, bypassLogin } = useAuth();
 
   const [email, setEmail] = useState("demo2@email.com");
   const [password, setPassword] = useState("1234");
@@ -222,6 +222,25 @@ export default function LoginScreen() {
           </View>
           <Text style={styles.googleText}>Continue with Google</Text>
         </Pressable>
+
+        {__DEV__ && (
+          <Pressable
+            onPress={async () => {
+              await bypassLogin();
+              router.replace("/home");
+            }}
+            style={({ pressed }) => [
+              styles.googleButton,
+              { marginTop: 12, borderColor: colors.primary },
+              pressed && styles.buttonPressed,
+            ]}
+          >
+            <Feather name="zap" size={18} color={colors.primary} />
+            <Text style={[styles.googleText, { color: colors.primary }]}>
+              Bypass Login (Dev)
+            </Text>
+          </Pressable>
+        )}
       </View>
 
       <View style={styles.footer}>

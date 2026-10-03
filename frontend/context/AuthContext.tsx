@@ -22,6 +22,7 @@ type AuthContextValue = {
   signIn: (email: string, password?: string) => Promise<void>;
   signUp: (name: string, email: string, password?: string) => Promise<void>;
   signOut: () => Promise<void>;
+  bypassLogin: () => Promise<void>;
 };
 
 const STORAGE_KEY = '@derma-check/user';
@@ -59,6 +60,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         await AsyncStorage.removeItem(STORAGE_KEY);
         await AsyncStorage.removeItem('@derma-check/token');
+      },
+      bypassLogin: async () => {
+        const dummyUser = { id: '65d8f74a9b23c4a2a1b9e5c1', name: 'Dev Bypass', email: 'bypass@email.com' };
+        setUser(dummyUser);
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(dummyUser));
+        await AsyncStorage.setItem('@derma-check/token', 'DUMMY_BYPASS_TOKEN');
       },
     }),
     [isLoading, user],
