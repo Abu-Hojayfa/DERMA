@@ -85,8 +85,9 @@ export default function ScanScreen() {
       });
       setImageUri(null);
       setImageBase64(null);
-    } catch (e) {
-      Alert.alert('Error', 'Failed to analyze image. Please try again.');
+    } catch (e: any) {
+      console.error("Scan error:", e);
+      Alert.alert('Error', `Failed to analyze image: ${e.message || String(e)}`);
     } finally {
       setIsScanning(false);
     }

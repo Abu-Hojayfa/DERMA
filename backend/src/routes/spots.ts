@@ -19,7 +19,7 @@ const GEMINI_MODELS = [
   "gemini-3.5-flash",
 ];
 
-async function callGemini(body: object, retries = 5): Promise<any> {
+async function callGemini(body: object, retries = 2): Promise<any> {
   for (const model of GEMINI_MODELS) {
     for (let attempt = 1; attempt <= retries; attempt++) {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GOOGLE_AI_API_KEY}`;
@@ -35,7 +35,7 @@ async function callGemini(body: object, retries = 5): Promise<any> {
       const isRetryable = res.status === 503 || res.status === 429;
       logger.warn({ model, attempt, status: res.status }, "Gemini attempt failed");
       if (!isRetryable || attempt === retries) break;
-      await new Promise(r => setTimeout(r, 800 * attempt));
+      await new Promise(r => setTimeout(r, 400 * attempt)); // reduced sleep
     }
   }
   throw new Error("All Gemini models failed");
