@@ -104,10 +104,6 @@ overrides:
 importers:
 
   .:
-    dependencies:
-      '@replit/connectors-sdk':
-        specifier: ^0.4.1
-        version: 0.4.3
     devDependencies:
       prettier:
         specifier: ^3.9.6
@@ -1357,9 +1353,6 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
-
-  '@replit/connectors-sdk@0.4.3':
-    resolution: {integrity: sha512-7XoaRty/O6JF161UkVBI8UewZ96XCNNN1kRvT9Q41IRH3xr+6ImylvXtirIghydDd2FCQvIkY4HQscOOr45otA==}
 
   '@scalar/helpers@0.16.0':
     resolution: {integrity: sha512-lCBNB3hN8sGfUghz5AK5r63G+1/x4PHSgjH9asJVWne5e1tnKkti5eaejPLgy8didpAZsyXEp744xIosoWu9AA==}
@@ -5185,8 +5178,6 @@ snapshots:
       react-native: 0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1)
     optionalDependencies:
       '@types/react': 19.2.18
-
-  '@replit/connectors-sdk@0.4.3': {}
 
   '@scalar/helpers@0.16.0': {}
 
