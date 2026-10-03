@@ -68,11 +68,19 @@ export default function ScanScreen() {
     try {
       const spot = await createSpotMutation.mutateAsync({ data: { label: 'New Scan', bodyRegion: 'Unknown' } });
       const scanResult = await scanSpotMutation.mutateAsync({ id: spot.id, data: { base64Image: imageBase64 } });
+
+      // Strip the base64 imageUrl from the result before passing as a route param.
+      // It can be hundreds of KB which overflows React Navigation's param size limit.
+      const safeResult = {
+        ...scanResult,
+        photoEntry: { ...scanResult.photoEntry, imageUrl: undefined },
+      };
+
       router.replace({
         pathname: '/result',
         params: {
           imageUri: imageUri ?? '',
-          result: JSON.stringify(scanResult),
+          result: JSON.stringify(safeResult),
         },
       });
       setImageUri(null);
