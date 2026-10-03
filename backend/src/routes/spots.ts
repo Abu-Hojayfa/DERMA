@@ -8,6 +8,28 @@ const router = Router();
 const GOOGLE_AI_API_KEY = process.env.GOOGLE_AI_API_KEY;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
+const GEMINI_MODELS = ["gemini-3.8-flash", "gemini-1.5-flash"];
+
+async function callGemini(body: object, retries = 3): Promise<any> {
+  for (const model of GEMINI_MODELS) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GOOGLE_AI_API_KEY}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) return res.json();
+      const errText = await res.text();
+      const isRetryable = res.status === 503 || res.status === 429;
+      logger.warn({ model, attempt, status: res.status, errText }, "Gemini attempt failed");
+      if (!isRetryable || attempt === retries) break;
+      await new Promise(r => setTimeout(r, attempt * 1500));
+    }
+  }
+  throw new Error("All Gemini models failed");
+}
+
 router.use("/spots", requireAuth);
 
 router.get("/spots", async (req: AuthRequest, res: Response) => {
@@ -120,8 +142,7 @@ router.post("/spots/:id/scan", async (req: AuthRequest, res: Response) => {
 
     const base64Data = validated.data.base64Image.replace(/^data:image\/\w+;base64,/, "");
 
-    // 1. Call Gemini 3.8 Flash
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${GOOGLE_AI_API_KEY}`;
+    // 1. Call Gemini (with retry + model fallback)
     const geminiBody = {
       contents: [{
         parts: [
@@ -129,25 +150,17 @@ router.post("/spots/:id/scan", async (req: AuthRequest, res: Response) => {
           { text: "You are DermaCheck, a cosmetic skin concern screening assistant (NOT a medical device). First, strictly verify if the image is a photo of human skin. If it is NOT a photo of skin or is irrelevant to skincare, you MUST return JSON with concernType as 'Invalid Image' and explain in the description that you only analyze skin photos for the DermaCheck app. If it IS skin, analyze it and return JSON with exactly these keys: { \"concernType\": string, \"severity\": \"mild\"|\"moderate\"|\"severe\", \"description\": string, \"bodyRegionHint\": string }. Always include a disclaimer that this is cosmetic guidance only in the description." }
         ]
       }],
-      generationConfig: {
-        responseMimeType: "application/json"
-      }
+      generationConfig: { responseMimeType: "application/json" }
     };
 
-    const geminiRes = await fetch(geminiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(geminiBody)
-    });
-
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
-      logger.error({ status: geminiRes.status, errText }, "Gemini API failed");
-      res.status(502).json({ error: "Image analysis failed" });
+    let geminiData: any;
+    try {
+      geminiData = await callGemini(geminiBody);
+    } catch (e) {
+      logger.error({ e }, "All Gemini retries exhausted");
+      res.status(502).json({ error: "Image analysis failed. The AI service is temporarily unavailable. Please try again in a moment." });
       return;
     }
-
-    const geminiData = await geminiRes.json() as any;
     const geminiText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
     const analysis = JSON.parse(geminiText);
 
