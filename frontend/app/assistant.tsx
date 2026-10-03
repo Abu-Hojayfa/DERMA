@@ -33,8 +33,6 @@ function getLocalReply(message: string) {
 }
 
 export default function AssistantScreen() {
-  const colors = useColors();
-  const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const palette = useColors();
   const styles = createStyles(palette);
