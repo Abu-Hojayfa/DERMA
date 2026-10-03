@@ -148,6 +148,12 @@ router.post("/spots/:id/scan", async (req: AuthRequest, res: Response) => {
     }
 
     const base64Data = validated.data.base64Image.replace(/^data:image\/\w+;base64,/, "");
+    logger.info({ base64Length: base64Data.length }, "Image received for analysis");
+
+    if (!base64Data || base64Data.length < 100) {
+      res.status(400).json({ error: "Invalid or empty image data" });
+      return;
+    }
 
     // 1. Call Gemini (with retry + model fallback)
     const geminiBody = {

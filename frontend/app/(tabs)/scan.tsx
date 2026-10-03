@@ -30,7 +30,7 @@ export default function ScanScreen() {
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
-      quality: 0.8,
+      quality: 0.4,
       base64: true,
     });
 
@@ -52,7 +52,7 @@ export default function ScanScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
-      quality: 0.8,
+      quality: 0.4,
       base64: true,
     });
 
