@@ -12,10 +12,10 @@ import { useAuth } from '@/context/AuthContext';
 export default function SignupScreen() {
   const insets = useSafeAreaInsets();
   const { signUp } = useAuth();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
+  const [name, setName] = useState('Test User');
+  const [email, setEmail] = useState('test@email.com');
+  const [password, setPassword] = useState('1234');
+  const [confirm, setConfirm] = useState('1234');
   const [agreed, setAgreed] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
@@ -24,14 +24,14 @@ export default function SignupScreen() {
   const errors = {
     name: submitted && !name.trim() ? 'Your name is required' : '',
     email: submitted && !email.trim() ? 'Email is required' : submitted && !emailValid ? 'Enter a valid email address' : '',
-    password: submitted && password.length < 6 ? 'Use at least 6 characters' : '',
+    password: submitted && password.length < 4 ? 'Use at least 4 characters' : '',
     confirm: submitted && confirm !== password ? 'Passwords do not match' : '',
     agreed: submitted && !agreed ? 'Please acknowledge this before continuing' : '',
   };
 
   async function handleSignup() {
     setSubmitted(true);
-    if (Object.values(errors).some(Boolean) || !name.trim() || !emailValid || password.length < 6 || confirm !== password || !agreed) {
+    if (Object.values(errors).some(Boolean) || !name.trim() || !emailValid || password.length < 4 || confirm !== password || !agreed) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
@@ -69,7 +69,7 @@ export default function SignupScreen() {
           <Text style={styles.label}>Password</Text>
           <View style={[styles.inputShell, focusedField === 'password' && styles.inputFocused, errors.password && styles.inputError]}>
             <Feather name="lock" size={18} color={focusedField === 'password' ? colors.light.primary : colors.light.mutedForeground} />
-            <TextInput value={password} onChangeText={setPassword} onFocus={() => setFocusedField('password')} onBlur={() => setFocusedField(null)} secureTextEntry placeholder="At least 6 characters" placeholderTextColor={colors.light.mutedForeground} style={styles.input} />
+            <TextInput value={password} onChangeText={setPassword} onFocus={() => setFocusedField('password')} onBlur={() => setFocusedField(null)} secureTextEntry placeholder="At least 4 characters" placeholderTextColor={colors.light.mutedForeground} style={styles.input} />
           </View>
           {errors.password ? <Text style={styles.error}>{errors.password}</Text> : null}
         </View>
