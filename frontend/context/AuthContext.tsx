@@ -28,11 +28,15 @@ const STORAGE_KEY = '@derma-check/user';
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>({ id: '65d8f74a9b23c4a2a1b9e5c1', name: 'Test User', email: 'test@email.com' });
-  const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // BYPASS AUTH FOR TESTING
+    AsyncStorage.getItem(STORAGE_KEY)
+      .then((value) => {
+        if (value) setUser(JSON.parse(value) as User);
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   const value = useMemo<AuthContextValue>(
