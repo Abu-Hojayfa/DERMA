@@ -151,36 +151,58 @@ router.post("/spots/:id/scan", async (req: AuthRequest, res: Response) => {
     const geminiText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
     const analysis = JSON.parse(geminiText);
 
-    // 2. Call Groq for Care Card
-    const groqUrl = "https://api.groq.com/openai/v1/chat/completions";
-    const groqBody = {
-      model: "llama-3.3-70b-versatile",
-      messages: [
-        { role: "system", content: "You are a friendly cosmetic skincare assistant. You receive an analysis of a skin spot. Output a JSON object with: { \"generatedText\": string (friendly explanation), \"routineSteps\": string[] (suggested skincare steps), \"ingredients\": string[] (helpful cosmetic ingredients), \"urgencyLevel\": \"low\"|\"medium\"|\"high\" }." },
-        { role: "user", content: JSON.stringify(analysis) }
-      ],
-      response_format: { type: "json_object" }
-    };
-
-    const groqRes = await fetch(groqUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${GROQ_API_KEY}`
-      },
-      body: JSON.stringify(groqBody)
+    let carePlan;
+    
+    // Check if we already have a care card for this similar case in the database
+    const similarPhoto = await PhotoEntry.findOne({
+      concernType: analysis.concernType,
+      severity: analysis.severity
     });
-
-    if (!groqRes.ok) {
-      const errText = await groqRes.text();
-      logger.error({ status: groqRes.status, errText }, "Groq API failed");
-      res.status(502).json({ error: "Care card generation failed" });
-      return;
+    
+    if (similarPhoto) {
+      const existingCard = await CareCard.findOne({ photoEntryId: similarPhoto._id });
+      if (existingCard) {
+        carePlan = {
+          generatedText: existingCard.generatedText,
+          routineSteps: existingCard.routineSteps,
+          ingredients: existingCard.ingredients,
+          urgencyLevel: existingCard.urgencyLevel
+        };
+      }
     }
 
-    const groqData = await groqRes.json() as any;
-    const groqContent = groqData.choices?.[0]?.message?.content || "{}";
-    const carePlan = JSON.parse(groqContent);
+    if (!carePlan) {
+      // 2. Call Groq for Care Card
+      const groqUrl = "https://api.groq.com/openai/v1/chat/completions";
+      const groqBody = {
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          { role: "system", content: "You are a friendly cosmetic skincare assistant. You receive an analysis of a skin spot. Output a JSON object with: { \"generatedText\": string (friendly explanation), \"routineSteps\": string[] (suggested skincare steps), \"ingredients\": string[] (helpful cosmetic ingredients), \"urgencyLevel\": \"low\"|\"medium\"|\"high\" }." },
+          { role: "user", content: JSON.stringify(analysis) }
+        ],
+        response_format: { type: "json_object" }
+      };
+
+      const groqRes = await fetch(groqUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${GROQ_API_KEY}`
+        },
+        body: JSON.stringify(groqBody)
+      });
+
+      if (!groqRes.ok) {
+        const errText = await groqRes.text();
+        logger.error({ status: groqRes.status, errText }, "Groq API failed");
+        res.status(502).json({ error: "Care card generation failed" });
+        return;
+      }
+
+      const groqData = await groqRes.json() as any;
+      const groqContent = groqData.choices?.[0]?.message?.content || "{}";
+      carePlan = JSON.parse(groqContent);
+    }
 
     // 3. Save to MongoDB
     const photoEntry = await PhotoEntry.create({

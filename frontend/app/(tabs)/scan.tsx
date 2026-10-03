@@ -6,12 +6,17 @@ import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { useCreateSpot, useScanSpot } from '@derma/api-client-react';
 
 export default function ScanScreen() {
   const colors = useColors();
   const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const createSpotMutation = useCreateSpot();
+  const scanSpotMutation = useScanSpot();
 
   const takePhoto = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -26,11 +31,12 @@ export default function ScanScreen() {
       mediaTypes: ['images'],
       allowsEditing: true,
       quality: 0.8,
+      base64: true,
     });
 
     if (!result.canceled) {
       setImageUri(result.assets[0].uri);
-      Alert.alert("Ready to Scan", "Photo captured! The API upload will be wired up here soon.");
+      setImageBase64(result.assets[0].base64 || null);
     }
   };
 
@@ -47,11 +53,28 @@ export default function ScanScreen() {
       mediaTypes: ['images'],
       allowsEditing: true,
       quality: 0.8,
+      base64: true,
     });
 
     if (!result.canceled) {
       setImageUri(result.assets[0].uri);
-      Alert.alert("Ready to Scan", "Photo selected! The API upload will be wired up here soon.");
+      setImageBase64(result.assets[0].base64 || null);
+    }
+  };
+
+  const handleAnalyze = async () => {
+    if (!imageBase64) return;
+    setIsScanning(true);
+    try {
+      const spot = await createSpotMutation.mutateAsync({ data: { label: "New Scan", bodyRegion: "Unknown" } });
+      await scanSpotMutation.mutateAsync({ id: spot.id, data: { base64Image: imageBase64 } });
+      Alert.alert("Analysis Complete", "Check your history for the results!");
+      setImageUri(null);
+      setImageBase64(null);
+    } catch (e) {
+      Alert.alert("Error", "Failed to analyze image. Please try again.");
+    } finally {
+      setIsScanning(false);
     }
   };
 
@@ -66,7 +89,14 @@ export default function ScanScreen() {
             {imageUri ? (
               <>
                 <Image source={{ uri: imageUri }} style={styles.previewImage} />
-                <Pressable onPress={() => setImageUri(null)} style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed, { marginTop: 20 }]}><Feather name="x" size={17} color={colors.primary} /><Text style={styles.secondaryText}>Clear Selection</Text></Pressable>
+                <Pressable onPress={handleAnalyze} disabled={isScanning} style={({ pressed }) => [styles.primaryButton, (pressed || isScanning) && styles.buttonPressed, { marginTop: 20 }]}>
+                  <Feather name="check" size={17} color={colors.primaryForeground} />
+                  <Text style={styles.primaryText}>{isScanning ? "Analyzing..." : "Analyze Image"}</Text>
+                </Pressable>
+                <Pressable onPress={() => { setImageUri(null); setImageBase64(null); }} disabled={isScanning} style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed, { marginTop: 10 }]}>
+                  <Feather name="x" size={17} color={colors.primary} />
+                  <Text style={styles.secondaryText}>Clear Selection</Text>
+                </Pressable>
               </>
             ) : (
               <>

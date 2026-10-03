@@ -1,7 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { Platform } from 'react-native';
+import { loginUser, registerUser, setAuthTokenGetter, setBaseUrl } from '@derma/api-client-react';
+
+const API_BASE = Platform.OS === 'android' ? 'http://10.0.2.2:3000' : 'http://localhost:3000';
+setBaseUrl(API_BASE);
+
+setAuthTokenGetter(async () => {
+  return await AsyncStorage.getItem('@derma-check/token');
+});
 
 type User = {
+  id: string;
   name: string;
   email: string;
 };
@@ -9,8 +19,8 @@ type User = {
 type AuthContextValue = {
   user: User | null;
   isLoading: boolean;
-  signIn: (email: string) => Promise<void>;
-  signUp: (name: string, email: string) => Promise<void>;
+  signIn: (email: string, password?: string) => Promise<void>;
+  signUp: (name: string, email: string, password?: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -33,19 +43,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       user,
       isLoading,
-      signIn: async (email) => {
-        const nextUser = { email, name: email.split('@')[0] || 'there' };
-        setUser(nextUser);
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(nextUser));
+      signIn: async (email, password = 'password123') => {
+        const response = await loginUser({ email, password });
+        setUser(response.user);
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(response.user));
+        await AsyncStorage.setItem('@derma-check/token', response.token);
       },
-      signUp: async (name, email) => {
-        const nextUser = { email, name };
-        setUser(nextUser);
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(nextUser));
+      signUp: async (name, email, password = 'password123') => {
+        const response = await registerUser({ name, email, password });
+        setUser(response.user);
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(response.user));
+        await AsyncStorage.setItem('@derma-check/token', response.token);
       },
       signOut: async () => {
         setUser(null);
         await AsyncStorage.removeItem(STORAGE_KEY);
+        await AsyncStorage.removeItem('@derma-check/token');
       },
     }),
     [isLoading, user],
