@@ -1,6 +1,5 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
   description: API specification
@@ -9,14 +8,14 @@ servers:
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: auth
+  - name: spots
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +23,239 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /auth/register:
+    post:
+      operationId: registerUser
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 6
+                name:
+                  type: string
+      responses:
+        "200":
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+  /auth/login:
+    post:
+      operationId: loginUser
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+  /spots:
+    get:
+      operationId: getSpots
+      tags: [spots]
+      summary: Get user's spots
+      responses:
+        "200":
+          description: List of spots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Spot"
+    post:
+      operationId: createSpot
+      tags: [spots]
+      summary: Create a new spot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [label]
+              properties:
+                label:
+                  type: string
+                bodyRegion:
+                  type: string
+      responses:
+        "200":
+          description: Spot created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Spot"
+  /spots/{id}/scan:
+    post:
+      operationId: scanSpot
+      tags: [spots]
+      summary: Scan a spot photo and get care card
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [base64Image]
+              properties:
+                base64Image:
+                  type: string
+      responses:
+        "200":
+          description: Scan results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanResult"
+  /spots/{id}/history:
+    get:
+      operationId: getSpotHistory
+      tags: [spots]
+      summary: Get scan history for a spot
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: History entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScanResult"
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
-
+    User:
+      type: object
+      required: [id, email, name, createdAt]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        skinToneEstimate:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    AuthResponse:
+      type: object
+      required: [user, token]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+    Spot:
+      type: object
+      required: [id, userId, label, createdAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        label:
+          type: string
+        bodyRegion:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    PhotoEntry:
+      type: object
+      required: [id, spotId, imageUrl, capturedAt]
+      properties:
+        id:
+          type: string
+        spotId:
+          type: string
+        imageUrl:
+          type: string
+        capturedAt:
+          type: string
+          format: date-time
+        concernType:
+          type: string
+        severity:
+          type: string
+          enum: [mild, moderate, severe]
+        confidence:
+          type: number
+    CareCard:
+      type: object
+      required: [id, photoEntryId, generatedText, routineSteps, ingredients, urgencyLevel, createdAt]
+      properties:
+        id:
+          type: string
+        photoEntryId:
+          type: string
+        generatedText:
+          type: string
+        routineSteps:
+          type: array
+          items:
+            type: string
+        ingredients:
+          type: array
+          items:
+            type: string
+        urgencyLevel:
+          type: string
+          enum: [low, medium, high]
+        createdAt:
+          type: string
+          format: date-time
+    ScanResult:
+      type: object
+      required: [photoEntry, careCard]
+      properties:
+        photoEntry:
+          $ref: "#/components/schemas/PhotoEntry"
+        careCard:
+          $ref: "#/components/schemas/CareCard"
