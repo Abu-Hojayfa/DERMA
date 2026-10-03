@@ -14,13 +14,14 @@ export default function SignupScreen() {
   const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const { signUp } = useAuth();
-  const [name, setName] = useState('Test User');
-  const [email, setEmail] = useState('test@email.com');
-  const [password, setPassword] = useState('1234');
-  const [confirm, setConfirm] = useState('1234');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const emailValid = /^\S+@\S+\.\S+$/.test(email.trim());
   const errors = {
@@ -33,13 +34,19 @@ export default function SignupScreen() {
 
   async function handleSignup() {
     setSubmitted(true);
+    setServerError(null);
     if (Object.values(errors).some(Boolean) || !name.trim() || !emailValid || password.length < 4 || confirm !== password || !agreed) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
-    await signUp(name.trim(), email.trim().toLowerCase(), password);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    router.replace('/home');
+    try {
+      await signUp(name.trim(), email.trim().toLowerCase(), password);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.replace('/home');
+    } catch (e: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setServerError(e.message || "Email might already be in use.");
+    }
   }
 
   return (
@@ -91,6 +98,8 @@ export default function SignupScreen() {
           <Text style={styles.disclaimerText}>I agree that DermaCheck is a screening assistant and does not provide medical diagnoses.</Text>
         </Pressable>
         {errors.agreed ? <Text style={styles.error}>{errors.agreed}</Text> : null}
+        
+        {serverError ? <View style={styles.serverErrorBox}><Feather name="alert-circle" size={16} color={colors.destructive} /><Text style={styles.serverErrorText}>{serverError}</Text></View> : null}
 
         <Pressable onPress={handleSignup} style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}>
           <Text style={styles.primaryText}>Create Account</Text>
@@ -127,4 +136,6 @@ const getStyles = (colors: any) => StyleSheet.create({
   footerText: { color: colors.mutedForeground, fontFamily: 'Inter_400Regular', fontSize: 13 },
   link: { color: colors.primary, fontFamily: 'Inter_700Bold', fontSize: 13 },
   pressed: { opacity: 0.7 },
+  serverErrorBox: { marginTop: 15, padding: 12, borderRadius: 12, backgroundColor: '#FEE2E2', flexDirection: 'row', alignItems: 'center', gap: 8 },
+  serverErrorText: { color: colors.destructive, fontFamily: 'Inter_600SemiBold', fontSize: 13 },
 });

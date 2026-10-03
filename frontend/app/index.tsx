@@ -18,11 +18,12 @@ export default function LoginScreen() {
   const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const { user, isLoading, signIn } = useAuth();
-  const [email, setEmail] = useState('test@email.com');
-  const [password, setPassword] = useState('1234');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [focusedField, setFocusedField] = useState<'email' | 'password' | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoading && user) router.replace('/home');
@@ -33,13 +34,19 @@ export default function LoginScreen() {
 
   async function handleLogin() {
     setSubmitted(true);
+    setServerError(null);
     if (!validEmail(email) || !password) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
-    await signIn(email.trim().toLowerCase(), password);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    router.replace('/home');
+    try {
+      await signIn(email.trim().toLowerCase(), password);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.replace('/home');
+    } catch (e: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setServerError(e.message || "Invalid credentials.");
+    }
   }
 
   return (
@@ -117,6 +124,8 @@ export default function LoginScreen() {
         >
           <Text style={styles.forgotText}>Forgot password?</Text>
         </Pressable>
+        
+        {serverError ? <View style={styles.serverErrorBox}><Feather name="alert-circle" size={16} color={colors.destructive} /><Text style={styles.serverErrorText}>{serverError}</Text></View> : null}
 
         <Pressable
           testID="login-submit"
@@ -190,4 +199,6 @@ const getStyles = (colors: any) => StyleSheet.create({
   footerText: { color: colors.mutedForeground, fontFamily: 'Inter_400Regular', fontSize: 13 },
   link: { color: colors.primary, fontFamily: 'Inter_700Bold', fontSize: 13 },
   pressed: { opacity: 0.65 },
+  serverErrorBox: { marginTop: 5, marginBottom: 15, padding: 12, borderRadius: 12, backgroundColor: '#FEE2E2', flexDirection: 'row', alignItems: 'center', gap: 8 },
+  serverErrorText: { color: colors.destructive, fontFamily: 'Inter_600SemiBold', fontSize: 13 },
 });
