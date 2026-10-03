@@ -126,7 +126,7 @@ router.post("/spots/:id/scan", async (req: AuthRequest, res: Response) => {
       contents: [{
         parts: [
           { inlineData: { mimeType: "image/jpeg", data: base64Data } },
-          { text: "You are a cosmetic skin concern screening assistant (NOT a medical device). Analyze this skin photo and return JSON with exactly these keys: { \"concernType\": string, \"severity\": \"mild\"|\"moderate\"|\"severe\", \"description\": string, \"bodyRegionHint\": string }. Always include a disclaimer that this is cosmetic guidance only in the description." }
+          { text: "You are DermaCheck, a cosmetic skin concern screening assistant (NOT a medical device). First, strictly verify if the image is a photo of human skin. If it is NOT a photo of skin or is irrelevant to skincare, you MUST return JSON with concernType as 'Invalid Image' and explain in the description that you only analyze skin photos for the DermaCheck app. If it IS skin, analyze it and return JSON with exactly these keys: { \"concernType\": string, \"severity\": \"mild\"|\"moderate\"|\"severe\", \"description\": string, \"bodyRegionHint\": string }. Always include a disclaimer that this is cosmetic guidance only in the description." }
         ]
       }],
       generationConfig: {

@@ -1,30 +1,82 @@
 import { Feather } from '@expo/vector-icons';
-import React from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View, Image } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import colors from '@/constants/colors';
 import { ScreenHeader } from '@/components/ScreenHeader';
 
 export default function ScanScreen() {
   const insets = useSafeAreaInsets();
-  const placeholder = () => {
+  const [imageUri, setImageUri] = useState<string | null>(null);
+
+  const takePhoto = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Alert.alert('Preview mode', 'Photo capture is not enabled in this preview yet.');
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    
+    if (permissionResult.granted === false) {
+      Alert.alert("Permission Required", "DermaCheck needs camera access to take a photo of your skin concern.");
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+      Alert.alert("Ready to Scan", "Photo captured! The API upload will be wired up here soon.");
+    }
   };
+
+  const pickImage = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (permissionResult.granted === false) {
+      Alert.alert("Permission Required", "DermaCheck needs gallery access to select a photo of your skin concern.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+      Alert.alert("Ready to Scan", "Photo selected! The API upload will be wired up here soon.");
+    }
+  };
+
   return (
     <View style={styles.screen}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 100 }}>
         <View style={styles.content}>
           <ScreenHeader title="Skin screening" subtitle="A calm first step for your concern" />
           <Text style={styles.description}>Upload a clear photo of the skin concern you want to check.</Text>
+          
           <View style={styles.uploadCard}>
-            <View style={styles.uploadIcon}><Feather name="image" size={30} color={colors.light.primary} /></View>
-            <Text style={styles.uploadTitle}>Add a photo</Text>
-            <Text style={styles.uploadText}>Choose a well-lit photo so you can keep the concern clearly in view.</Text>
-            <Pressable onPress={placeholder} style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}><Feather name="camera" size={17} color={colors.light.primaryForeground} /><Text style={styles.primaryText}>Take photo</Text></Pressable>
-            <Pressable onPress={placeholder} style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}><Feather name="image" size={17} color={colors.light.primary} /><Text style={styles.secondaryText}>Choose from gallery</Text></Pressable>
+            {imageUri ? (
+              <>
+                <Image source={{ uri: imageUri }} style={styles.previewImage} />
+                <Pressable onPress={() => setImageUri(null)} style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed, { marginTop: 20 }]}><Feather name="x" size={17} color={colors.light.primary} /><Text style={styles.secondaryText}>Clear Selection</Text></Pressable>
+              </>
+            ) : (
+              <>
+                <View style={styles.uploadIcon}><Feather name="image" size={30} color={colors.light.primary} /></View>
+                <Text style={styles.uploadTitle}>Add a photo</Text>
+                <Text style={styles.uploadText}>Choose a well-lit photo so you can keep the concern clearly in view.</Text>
+                <Pressable onPress={takePhoto} style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}><Feather name="camera" size={17} color={colors.light.primaryForeground} /><Text style={styles.primaryText}>Take photo</Text></Pressable>
+                <Pressable onPress={pickImage} style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}><Feather name="image" size={17} color={colors.light.primary} /><Text style={styles.secondaryText}>Choose from gallery</Text></Pressable>
+              </>
+            )}
           </View>
+
           <View style={styles.tip}><View style={styles.tipIcon}><Feather name="sun" size={16} color={colors.light.warning} /></View><View style={styles.tipCopy}><Text style={styles.tipTitle}>Tip for a clearer screening</Text><Text style={styles.tipText}>Use good lighting and keep the skin area clearly visible.</Text></View></View>
           <View style={styles.disclaimer}><Feather name="info" size={16} color={colors.light.primary} /><Text style={styles.disclaimerText}>DermaCheck is a screening assistant, not a replacement for professional medical advice.</Text></View>
         </View>
@@ -53,4 +105,5 @@ const styles = StyleSheet.create({
   tipText: { marginTop: 4, color: '#A16207', fontFamily: 'Inter_400Regular', fontSize: 11, lineHeight: 16 },
   disclaimer: { marginTop: 25, paddingHorizontal: 3, flexDirection: 'row', gap: 8 },
   disclaimerText: { flex: 1, color: colors.light.mutedForeground, fontFamily: 'Inter_400Regular', fontSize: 11, lineHeight: 16 },
+  previewImage: { width: 250, height: 250, borderRadius: 20 },
 });
