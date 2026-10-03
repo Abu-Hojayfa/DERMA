@@ -3,7 +3,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 import { Platform } from 'react-native';
 import { loginUser, registerUser, setAuthTokenGetter, setBaseUrl } from '@derma/api-client-react';
 
-const API_BASE = Platform.OS === 'android' ? 'http://10.0.2.2:3000' : 'http://localhost:3000';
+const API_BASE = 'http://192.168.68.52:3000'; // Updated to your PC's local IP
 setBaseUrl(API_BASE);
 
 setAuthTokenGetter(async () => {

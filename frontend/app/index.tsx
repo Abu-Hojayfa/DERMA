@@ -37,7 +37,7 @@ export default function LoginScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
-    await signIn(email.trim().toLowerCase());
+    await signIn(email.trim().toLowerCase(), password);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     router.replace('/home');
   }
