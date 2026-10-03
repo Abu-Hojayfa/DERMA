@@ -14,9 +14,9 @@
 DermaCheck-mobile-app/
 ├── artifacts/
 │   ├── derma-check/        ← React Native / Expo mobile app
-│   └── api-server/         ← Express + Drizzle ORM backend (Node.js)
+│   └── api-server/         ← Express + Mongoose backend (Node.js)
 ├── lib/
-│   ├── db/                 ← Drizzle ORM schema & migrations (PostgreSQL)
+│   ├── db/                 ← Mongoose models (MongoDB)
 │   ├── api-zod/            ← Shared Zod validation schemas (API contract)
 │   └── api-client-react/   ← React Query hooks for the mobile app
 └── .agents/
@@ -45,7 +45,9 @@ DermaCheck-mobile-app/
        │       - Free tier: very generous — verified ✅
        │       - Docs: https://console.groq.com/docs
        │
-       └──→ PostgreSQL via Drizzle ORM  (persist users, spots, history)
+       └──→ MongoDB Atlas via Mongoose  (persist users, spots, history)
+               - Free M0 tier: 512 MB, always-online, no credit card ✅
+               - https://mongodb.com/atlas
 ```
 
 > ⚠️ **Why NOT HuggingFace Inference API for these models?**
@@ -89,16 +91,17 @@ DermaCheck-mobile-app/
 
 ---
 
-## 🗄️ Database Schema (Drizzle ORM — lib/db/src/schema)
+## 🗄️ Database (MongoDB Atlas — Mongoose models in lib/db/src/models)
 
-Tables to implement:
+> **Connection**: Set `MONGODB_URI` to your Atlas M0 connection string (free, always-online).
+> No migrations needed — Mongoose handles schema at the application layer.
 
-| Table | Key Fields |
+| Collection | Key Fields |
 |---|---|
-| `users` | id, email, passwordHash, name, skinToneEstimate, createdAt |
-| `spots` | id, userId, label, bodyRegion, createdAt |
-| `photoEntries` | id, spotId, imageUrl, capturedAt, concernType, severity, confidence |
-| `careCards` | id, photoEntryId, generatedText, routineSteps[], ingredients[], urgencyLevel |
+| `users` | _id, email, passwordHash, name, skinToneEstimate, createdAt |
+| `spots` | _id, userId (ref User), label, bodyRegion, createdAt |
+| `photoentries` | _id, spotId (ref Spot), imageUrl, capturedAt, concernType, severity, confidence |
+| `carecards` | _id, photoEntryId (ref PhotoEntry), generatedText, routineSteps[], ingredients[], urgencyLevel |
 
 ---
 
@@ -152,7 +155,7 @@ Based on `GlowCheck_Design_Direction.docx`:
 ## ⚙️ Development Workflow
 
 1. **Package Manager**: Always use `pnpm`
-2. **DB Changes**: Edit `lib/db/src/schema`, then run `pnpm drizzle-kit push` or `generate`
+2. **DB Changes**: Edit `lib/db/src/models/index.ts` (Mongoose schemas — no migrations, just restart)
 3. **API Changes**: Define Zod schemas in `lib/api-zod` first, then implement in Express
 4. **Run Frontend**: `pnpm run dev` in `artifacts/derma-check`
 5. **Run Backend**: `pnpm run dev` in `artifacts/api-server`
@@ -160,12 +163,12 @@ Based on `GlowCheck_Design_Direction.docx`:
 ## 🔑 Environment Variables Needed
 
 ```env
-# artifacts/api-server/.env
-DATABASE_URL=postgresql://...
-HF_API_KEY=hf_...
-GROQ_API_KEY=gsk_...
-# Optional fallback
+# artifacts/api-server/.env  (copy from .env.example)
+MONGODB_URI=mongodb+srv://<user>:<pass>@cluster0.xxxxx.mongodb.net/dermacheck?retryWrites=true&w=majority
 GOOGLE_AI_API_KEY=AIza...
+GROQ_API_KEY=gsk_...
+JWT_SECRET=your-long-random-secret
+PORT=3000
 ```
 
 ---

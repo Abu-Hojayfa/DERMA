@@ -11,8 +11,8 @@
 [![React Native](https://img.shields.io/badge/React%20Native-Expo-61DAFB?logo=react)](https://expo.dev)
 [![Node.js](https://img.shields.io/badge/Node.js-Express-339933?logo=node.js)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)](https://www.typescriptlang.org)
-[![Drizzle ORM](https://img.shields.io/badge/Drizzle-ORM-C5F74F?logo=drizzle)](https://orm.drizzle.team)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169E1?logo=postgresql)](https://www.postgresql.org)
+[![Mongoose](https://img.shields.io/badge/Mongoose-ODM-880000?logo=mongoose)](https://mongoosejs.com)
+[![MongoDB Atlas](https://img.shields.io/badge/MongoDB-Atlas%20M0%20Free-47A248?logo=mongodb)](https://mongodb.com/atlas)
 [![Gemini AI](https://img.shields.io/badge/Google-Gemini%202.5%20Flash-4285F4?logo=google)](https://ai.google.dev)
 [![Groq](https://img.shields.io/badge/Groq-Llama%203.3%2070B-F55036?logo=meta)](https://console.groq.com)
 
@@ -54,8 +54,8 @@ DermaCheck lets you **photograph a skin area**, get an instant AI analysis of co
 └──────────────┴──────┬───────┴────────┬──────────┘
                       │                │
         ┌─────────────▼──┐    ┌────────▼─────────────┐
-        │ PostgreSQL DB   │    │  Google Gemini 2.5   │
-        │ (Drizzle ORM)  │    │  Flash (Image → JSON)│
+        │ MongoDB Atlas   │    │  Google Gemini 2.5   │
+        │ (Mongoose ODM)  │    │  Flash (Image → JSON)│
         └────────────────┘    └────────┬─────────────┘
                                        │  structured JSON
                               ┌────────▼─────────────┐
@@ -103,7 +103,7 @@ DermaCheck-mobile-app/
 │   │           └── lib/               ← AI clients, utilities
 │   │
 │   └── lib/
-│       ├── db/                        ← 🗄️ Drizzle ORM (schema + migrations)
+│       ├── db/                        ← 🗄️ Mongoose models (MongoDB Atlas)
 │       ├── api-zod/                   ← 📐 Shared Zod validation schemas
 │       ├── api-client-react/          ← 🔌 React Query hooks
 │       └── api-spec/                  ← API specification
@@ -114,14 +114,17 @@ DermaCheck-mobile-app/
 
 ---
 
-## 🗄️ Database Schema
+## 🗄️ Database Collections
 
-| Table | Key Fields |
-|-------|-----------|
-| `users` | `id`, `email`, `passwordHash`, `name`, `skinToneEstimate`, `createdAt` |
-| `spots` | `id`, `userId`, `label`, `bodyRegion`, `createdAt` |
-| `photoEntries` | `id`, `spotId`, `imageUrl`, `capturedAt`, `concernType`, `severity`, `confidence` |
-| `careCards` | `id`, `photoEntryId`, `generatedText`, `routineSteps[]`, `ingredients[]`, `urgencyLevel` |
+> Powered by **MongoDB Atlas M0** (free tier, 512 MB, no credit card, always online).
+> No migrations needed — Mongoose handles schemas at the application layer.
+
+| Collection | Key Fields |
+|-------|----------|
+| `users` | `_id`, `email`, `passwordHash`, `name`, `skinToneEstimate`, `createdAt` |
+| `spots` | `_id`, `userId` (ref User), `label`, `bodyRegion`, `createdAt` |
+| `photoentries` | `_id`, `spotId` (ref Spot), `imageUrl`, `capturedAt`, `concernType`, `severity`, `confidence` |
+| `carecards` | `_id`, `photoEntryId` (ref PhotoEntry), `generatedText`, `routineSteps[]`, `ingredients[]`, `urgencyLevel` |
 
 ---
 
@@ -172,23 +175,20 @@ cp artifacts/api-server/.env.example artifacts/api-server/.env
 Edit `artifacts/api-server/.env`:
 
 ```env
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/dermacheck
+# Get your free Atlas connection string at https://mongodb.com/atlas (M0 = free forever)
+MONGODB_URI=mongodb+srv://user:password@cluster0.xxxxx.mongodb.net/dermacheck?retryWrites=true&w=majority
 
-# AI Services
-GOOGLE_AI_API_KEY=AIza...          # https://aistudio.google.com
-GROQ_API_KEY=gsk_...               # https://console.groq.com
-
-# Auth
-JWT_SECRET=your-super-secret-jwt-key
+JWT_SECRET=replace-this-with-a-long-random-secret-string
+GOOGLE_AI_API_KEY=AIza...   # https://aistudio.google.com
+GROQ_API_KEY=gsk_...         # https://console.groq.com
 PORT=3000
 ```
 
-### 4. Set up the database
+### 4. No database setup needed!
 
-```bash
-pnpm --filter ./lib/db drizzle-kit push
-```
+MongoDB Atlas is managed — just paste your `MONGODB_URI` and the collections are created automatically when data is first written.
+
+> **Get a free Atlas cluster**: Go to [mongodb.com/atlas](https://mongodb.com/atlas), click "Try Free", create an M0 cluster (512 MB, no credit card), and copy the connection string.
 
 ### 5. Run the development servers
 
@@ -233,8 +233,8 @@ DermaCheck uses a warm, cosmetic-inspired design language:
 | Mobile App | React Native + Expo Router |
 | API Server | Node.js + Express |
 | Language | TypeScript 5.9 |
-| ORM | Drizzle ORM |
-| Database | PostgreSQL |
+| ODM | Mongoose |
+| Database | MongoDB Atlas (M0 free tier) |
 | Package Manager | pnpm (workspaces) |
 | Image AI | Google Gemini 2.5 Flash |
 | Care Card AI | Groq — Llama 3.3 70B |
